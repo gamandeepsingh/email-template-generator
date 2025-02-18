@@ -16,11 +16,12 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "Something broke!", details: err.message });
 });
 
+
+app.use("/api/templates", require("./routes/route"));
+
 app.get("/", (req, res) => {
   res.send("Welcome to the Emaily API!");
 });
-
-app.use("/api/templates", require("./routes/route"));
 
 connectDB().then(() => {
   app.listen(port, () => {
