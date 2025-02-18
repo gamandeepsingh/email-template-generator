@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2, Edit, Loader2, Clipboard, Download } from "lucide-react";
+import { Trash2, Edit, Loader2, Clipboard, Download, Send } from "lucide-react";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -14,6 +14,7 @@ interface Template {
   body: string;
   folder?: string;
   imageUrl?: string;
+  recipient?: string;
 }
 
 interface FormData {
@@ -22,6 +23,7 @@ interface FormData {
   body: string;
   folder: string;
   imageUrl?: string;
+  recipient?: string;
 }
 
 axios.defaults.baseURL =
@@ -41,6 +43,7 @@ const App = () => {
     body: "",
     folder: "",
     imageUrl: "",
+    recipient: "",
   });
   const [isUploading, setIsUploading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -139,14 +142,14 @@ const App = () => {
   };
 
   const copyToClipboard = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault()
+    e.preventDefault();
     const htmlContent = generateHtml();
     navigator.clipboard.writeText(htmlContent);
     toast.success("HTML copied to clipboard!");
   };
 
   const downloadAsHtml = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault()
+    e.preventDefault();
     const htmlContent = generateHtml();
     const blob = new Blob([htmlContent], { type: "text/html" });
     const link = document.createElement("a");
@@ -169,18 +172,35 @@ const App = () => {
       <body style="font-family: Arial, sans-serif; padding: 20px;">
         <h2>${formData.subject}</h2>
         <p>${formData.body.replace(/\n/g, "<br>")}</p>
-        ${formData.folder ? `<img src="${formData.folder}" alt="Email Image" style="max-width: 100%; height: auto;">` : ""}
+        ${
+          formData.folder
+            ? `<img src="${formData.folder}" alt="Email Image" style="max-width: 100%; height: auto;">`
+            : ""
+        }
       </body>
       </html>
     `;
   };
 
+  const sendViaGmail = () => {
+    const mailtoLink = `mailto:${
+      formData.recipient
+    }?subject=${encodeURIComponent(formData.subject)}&body=${encodeURIComponent(
+      formData.body
+    )}`;
+    window.location.href = mailtoLink;
+  };
+
   return (
     <div className="container mx-auto p-4 bg-white dark:bg-black">
       <header className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Template Manager</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-2">Create and manage your email templates</p>
-        </header>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          Template Manager
+        </h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-2">
+          Create and manage your email templates
+        </p>
+      </header>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="p-4">
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -241,14 +261,36 @@ const App = () => {
 
             {formData.name && formData.subject && formData.body && (
               <div className="flex gap-2">
-              <Button variant="outline" onClick={copyToClipboard}>
-                <Clipboard className="h-4 w-4 mr-2" /> Copy as HTML
-              </Button>
-              <Button variant="outline" onClick={downloadAsHtml}>
-                <Download className="h-4 w-4 mr-2" /> Download as HTML
-              </Button>
+                <Button variant="secondary" onClick={copyToClipboard}>
+                  <Clipboard className="h-4 w-4 mr-2" /> Copy as HTML
+                </Button>
+                <Button variant="secondary" onClick={downloadAsHtml}>
+                  <Download className="h-4 w-4 mr-2" /> Download as HTML
+                </Button>
               </div>
             )}
+
+            {formData.body && formData.name && formData.subject &&  <div className="w-full">
+              <Card className="p-4">
+                <form className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Recipient Email
+                    </label>
+                    <Input
+                      name="recipient"
+                      value={formData.recipient}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full"
+                    />
+                  </div>
+                  <Button variant="secondary" onClick={sendViaGmail}>
+                    <Send className="h-4 w-4 mr-2" /> Send via Gmail
+                  </Button>
+                </form>
+              </Card>
+            </div>}
           </form>
         </Card>
 
@@ -275,28 +317,32 @@ const App = () => {
 
       <div className="mt-8">
         <h2 className="text-xl font-semibold mb-4">Saved Templates</h2>
-        <div className="grid gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {templates.length > 0 &&
             templates.map((template) => (
               <Card key={template._id} className="p-4 hover:bg-white/20">
-                <div className="flex flex-wrap justify-between items-start">
-                  <div className="space-y-2 flex items-center gap-3">
-                    <div>
-                      <div className="font-black">{template.name}</div>
-                      <div className="font-medium">{template.subject}</div>
-                      <div className="text-sm text-gray-400">
-                        {template.body}
-                      </div>
-                    </div>
+                <div className="flex flex-wrap justify-between items-start gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     {template?.folder && (
                       <div className="mt-2">
                         <img
                           src={template?.folder}
                           alt={template.name}
-                          className="max-w-xs h-20 rounded"
+                          className="w-full sm:max-w-xs h-auto sm:h-20 rounded"
                         />
                       </div>
                     )}
+                    <div>
+                      <div className="font-black">{template.name}</div>
+                      <div className="font-medium">
+                        {template.subject.length > 40
+                          ? template.subject.slice(0, 40) + "..."
+                          : template.subject}
+                      </div>
+                      <div className="text-sm text-gray-400">
+                        {template.body.trim().split("\n")[0]}...
+                      </div>
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -319,7 +365,7 @@ const App = () => {
             ))}
         </div>
       </div>
-      <Toaster/>
+      <Toaster />
     </div>
   );
 };
