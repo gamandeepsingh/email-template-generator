@@ -260,12 +260,12 @@ const App = () => {
             </Button>
 
             {formData.name && formData.subject && formData.body && (
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button variant="secondary" onClick={copyToClipboard}>
-                  <Clipboard className="h-4 w-4 mr-2" /> Copy as HTML
+                  <Clipboard className="h-4 w-4 sm:mr-2" /> Copy as HTML
                 </Button>
                 <Button variant="secondary" onClick={downloadAsHtml}>
-                  <Download className="h-4 w-4 mr-2" /> Download as HTML
+                  <Download className="h-4 w-4 sm:mr-2" /> Download as HTML
                 </Button>
               </div>
             )}
